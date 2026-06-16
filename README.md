@@ -1,4 +1,11 @@
+
+
 # Projet OpenGL - Scène Cubemap Dragon
+**Membres du groupe:**
+- _Aissatou CISE_
+- _Kokou KOMBEDE_
+- _Ounissa SADAOUI_
+
 
 Ce projet est une application OpenGL en C++ qui affiche une scène 3D avec :
 
@@ -49,9 +56,7 @@ Ce projet est une application OpenGL en C++ qui affiche une scène 3D avec :
 - Ajout d'un grand plan subdivisé à `y = -1.0f` pour ancrer la scène et donner une forte impression de parallaxe lors des translations de la caméra.
 - Implémentation d'un shader de damier procédural (`u_UseTexture == 2` dans `object.fs`) utilisant les coordonnées UV pour alterner des cases grises sans charger d'image de texture externe.
 
-### 4. Ajustements de la Scène
 
-- Positionnement du plan de sol à `y = -1.0f` et ajustement de la sphère/du dragon pour éviter toute collision visuelle avec le sol.
 
 ## Compilation et exécution
 
