@@ -545,11 +545,20 @@ void UpdateCamera(GLFWwindow* window, float deltaTime)
     forward = normalize(forward);
     vec3 right = normalize(cross(forward, { 0.f, 1.f, 0.f }));
     vec3 up = normalize(cross(right, forward));
+    
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    g_CameraPosition = add(g_CameraPosition, mul(moveForward, speed * deltaTime));
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(forward, speed * deltaTime));
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(forward, -speed * deltaTime));
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+    g_CameraPosition = add(g_CameraPosition, mul(moveForward, -speed * deltaTime));
+
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(right, -speed * deltaTime));
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(right, speed * deltaTime));
+    /* test */
+    /*
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) g_CameraPosition.y += speed * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) g_CameraPosition.y -= speed * deltaTime;
+    */
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(up, speed * deltaTime));
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(up, -speed * deltaTime));
 
@@ -611,6 +620,95 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
     }
 }
 
+// Pour partie 2 
+
+//ajout de Create FBO
+void CreateFBO()
+{
+    glGenFramebuffers(1, &g_FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, g_FBO);
+
+    glGenTextures(1, &g_FBOTex);
+    glBindTexture(GL_TEXTURE_2D, g_FBOTex);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGB,
+        g_Width,
+        g_Height,
+        0,
+        GL_RGB,
+        GL_UNSIGNED_BYTE,
+        nullptr
+    );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER,
+        GL_COLOR_ATTACHMENT0,
+        GL_TEXTURE_2D,
+        g_FBOTex,
+        0
+    );
+
+    glGenRenderbuffers(1, &g_DepthRBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, g_DepthRBO);
+
+    glRenderbufferStorage(
+        GL_RENDERBUFFER,
+        GL_DEPTH24_STENCIL8,
+        g_Width,
+        g_Height
+    );
+
+    glFramebufferRenderbuffer(
+        GL_FRAMEBUFFER,
+        GL_DEPTH_STENCIL_ATTACHMENT,
+        GL_RENDERBUFFER,
+        g_DepthRBO
+    );
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cerr << "FBO incomplet !" << std::endl;
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+//Toujours pour partie 2 
+//jout de quad plein écran 
+void CreateScreenQuad()
+{
+    float quad[] =
+    {
+        -1.f,-1.f,0.f,0.f,
+         1.f,-1.f,1.f,0.f,
+         1.f, 1.f,1.f,1.f,
+
+        -1.f,-1.f,0.f,0.f,
+         1.f, 1.f,1.f,1.f,
+        -1.f, 1.f,0.f,1.f
+    };
+
+    glGenVertexArrays(1, &g_ScreenQuadVAO);
+    glGenBuffers(1, &g_ScreenQuadVBO);
+
+    glBindVertexArray(g_ScreenQuadVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, g_ScreenQuadVBO);
+    glBufferData(GL_ARRAY_BUFFER,sizeof(quad),quad,GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0,2,GL_FLOAT,GL_FALSE,4*sizeof(float),(void*)0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,4*sizeof(float),(void*)(2*sizeof(float)));
+
+    glBindVertexArray(0);
+}
+
 bool Initialise()
 {
     g_SkyboxShader.LoadVertexShader("basic.vs");
@@ -648,6 +746,15 @@ bool Initialise()
     glFrontFace(GL_CCW);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
+
+    //Pour partie 2
+    g_ScreenShader.LoadVertexShader("screen.vs");
+    g_ScreenShader.LoadFragmentShader("screen.fs");
+    g_ScreenShader.Create();
+
+    CreateFBO();
+    CreateScreenQuad();
+
     return true;
 }
 
@@ -670,6 +777,14 @@ void Terminate()
     glDeleteTextures(1, &g_DragonTexture);
     glDeleteVertexArrays(1, &g_GroundVAO);
     glDeleteBuffers(1, &g_GroundVBO);
+
+    //Terminations de ce qui a été initialisé pour la partie 2
+    g_ScreenShader.Destroy();
+    glDeleteFramebuffers(1, &g_FBO);
+    glDeleteTextures(1, &g_FBOTex);
+    glDeleteRenderbuffers(1, &g_DepthRBO);
+    glDeleteVertexArrays(1, &g_ScreenQuadVAO);
+    glDeleteBuffers(1, &g_ScreenQuadVBO);
 }
 
 void OnResize(GLFWwindow*, int width, int height)
@@ -680,8 +795,19 @@ void OnResize(GLFWwindow*, int width, int height)
 
 void RenderScene(GLFWwindow* window, float width, float height)
 {
+
+    //Pour partie 2 : 
+    //Remplacement de ça : 
+    /*
     glViewport(0, 0, width, height);
     glClearColor(0.12f, 0.12f, 0.16f, 1.f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    */
+
+    //Par ça : 
+    glBindFramebuffer(GL_FRAMEBUFFER, g_FBO);
+    glViewport(0,0,width,height);
+    glClearColor(0.12f,0.12f,0.16f,1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     static double lastTime = glfwGetTime();
@@ -800,6 +926,27 @@ void RenderScene(GLFWwindow* window, float width, float height)
         glDrawArrays(GL_TRIANGLES, 0, 36);
     }
     glBindVertexArray(0);
+    
+    
+    //Pour partie 2
+    //affichage du rendu FBO sur l'écran avec post-traitement
+    glBindFramebuffer(GL_FRAMEBUFFER,0);
+
+    glDisable(GL_DEPTH_TEST);
+
+    glUseProgram(g_ScreenShader.GetProgram());
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,g_FBOTex);
+
+    glUniform1i(glGetUniformLocation(g_ScreenShader.GetProgram(),"u_ScreenTexture"),0);
+
+    glUniform1i(glGetUniformLocation(g_ScreenShader.GetProgram(),"u_EffectMode"),g_EffectMode);
+
+    glBindVertexArray(g_ScreenQuadVAO);
+    glDrawArrays(GL_TRIANGLES,0,6);
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 int main()
@@ -836,6 +983,14 @@ int main()
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         }
+
+        //Pour partie 2 
+        if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) g_EffectMode = 0;
+        if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) g_EffectMode = 1;
+        if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) g_EffectMode = 2;
+        if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) g_EffectMode = 3;
+        if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) g_EffectMode = 4;
+
         RenderScene(window, (float)g_Width, (float)g_Height);
         glfwSwapBuffers(window);
         glfwPollEvents();

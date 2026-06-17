@@ -80,4 +80,7 @@ void main()
 
         FragColor = vec4(r, g, b, 1.0);
     }
+    else {
+    FragColor = texture(u_ScreenTexture, v_uv);
+}
 }
