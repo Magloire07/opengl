@@ -26,7 +26,7 @@ void main()
     } 
     else if (u_EffectMode == 3) {
         // Mode 3: Edge Detection (Sobel Kernel)
-        float offsets[9] = float[](
+        float offsets[18] = float[](
             -texelSize.x,  texelSize.y,  // top-left
              0.0,          texelSize.y,  // top-center
              texelSize.x,  texelSize.y,  // top-right

@@ -470,13 +470,54 @@ bool LoadOBJ(const char* filepath, GLuint& vao, GLuint& vbo, GLuint& ebo, uint32
     return true;
 }
 
+/*
 void CreateDragonMesh()
 {
     if (!LoadOBJ("dragon.obj", g_DragonVAO, g_DragonVBO, g_DragonEBO, g_DragonIndexCount)) {
         std::cerr << "Failed to load dragon.obj mesh!" << std::endl;
     }
 }
+*/
+void CreateDragonMesh()
+{
+    glGenVertexArrays(1, &g_DragonVAO);
+    glGenBuffers(1, &g_DragonVBO);
 
+    glBindVertexArray(g_DragonVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, g_DragonVBO);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        sizeof(DragonVertices),
+        DragonVertices,
+        GL_STATIC_DRAW
+    );
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+        0, 3, GL_FLOAT, GL_FALSE,
+        8 * sizeof(float),
+        (void*)0
+    );
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, 3, GL_FLOAT, GL_FALSE,
+        8 * sizeof(float),
+        (void*)(3 * sizeof(float))
+    );
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(
+        2, 2, GL_FLOAT, GL_FALSE,
+        8 * sizeof(float),
+        (void*)(6 * sizeof(float))
+    );
+
+    glBindVertexArray(0);
+
+    g_DragonIndexCount = sizeof(DragonVertices) / (8 * sizeof(float));
+}
 
 void CreateGroundMesh()
 {
@@ -536,36 +577,48 @@ void CreateGroundMesh()
 void UpdateCamera(GLFWwindow* window, float deltaTime)
 {
     const float speed = 4.0f;
-    vec3 forward;
+
     float yawRad = g_CameraYaw * 3.14159265f / 180.f;
     float pitchRad = g_CameraPitch * 3.14159265f / 180.f;
+
+    vec3 forward;
     forward.x = cosf(yawRad) * cosf(pitchRad);
     forward.y = sinf(pitchRad);
     forward.z = sinf(yawRad) * cosf(pitchRad);
     forward = normalize(forward);
+
     vec3 right = normalize(cross(forward, { 0.f, 1.f, 0.f }));
     vec3 up = normalize(cross(right, forward));
-    
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-    g_CameraPosition = add(g_CameraPosition, mul(moveForward, speed * deltaTime));
+        g_CameraPosition = add(g_CameraPosition, mul(forward, speed * deltaTime));
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-    g_CameraPosition = add(g_CameraPosition, mul(moveForward, -speed * deltaTime));
+        g_CameraPosition = add(g_CameraPosition, mul(forward, -speed * deltaTime));
 
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(right, -speed * deltaTime));
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(right, speed * deltaTime));
-    /* test */
-    /*
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) g_CameraPosition.y += speed * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) g_CameraPosition.y -= speed * deltaTime;
-    */
-    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(up, speed * deltaTime));
-    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) g_CameraPosition = add(g_CameraPosition, mul(up, -speed * deltaTime));
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        g_CameraPosition = add(g_CameraPosition, mul(right, -speed * deltaTime));
 
-    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) g_CameraYaw -= 90.f * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) g_CameraYaw += 90.f * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) g_CameraPitch += 60.f * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) g_CameraPitch -= 60.f * deltaTime;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        g_CameraPosition = add(g_CameraPosition, mul(right, speed * deltaTime));
+
+    if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+        g_CameraPosition = add(g_CameraPosition, mul(up, speed * deltaTime));
+
+    if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+        g_CameraPosition = add(g_CameraPosition, mul(up, -speed * deltaTime));
+
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        g_CameraYaw -= 90.f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        g_CameraYaw += 90.f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        g_CameraPitch += 60.f * deltaTime;
+
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        g_CameraPitch -= 60.f * deltaTime;
 
     if (g_CameraPitch > 89.f) g_CameraPitch = 89.f;
     if (g_CameraPitch < -89.f) g_CameraPitch = -89.f;
@@ -889,7 +942,9 @@ void RenderScene(GLFWwindow* window, float width, float height)
     glDrawElements(GL_TRIANGLES, g_SphereIndexCount, GL_UNSIGNED_INT, 0);
 
     float time = (float)currentTime;
-    mat4 dragonModel = multiply(makeTranslation(0.f, 1.15f, 0.f), multiply(makeRotationY(-time * 0.9f), makeScale(0.35f, 0.35f, 0.35f)));
+
+//    mat4 dragonModel = multiply(makeTranslation(0.f, 1.15f, 0.f), multiply(makeRotationY(-time * 0.9f), makeScale(0.35f, 0.35f, 0.35f)));
+    mat4 dragonModel = multiply(makeTranslation(0.f, 1.25f, 0.f), multiply(makeRotationY(-time * 0.9f),makeScale(0.08f, 0.08f, 0.08f)));    
     mat4 dragonMVP = multiply(projection, multiply(view, dragonModel));
     glUniformMatrix4fv(mvpLoc, 1, GL_TRUE, dragonMVP.m);
     glUniformMatrix4fv(modelLoc, 1, GL_TRUE, dragonModel.m);
@@ -899,8 +954,9 @@ void RenderScene(GLFWwindow* window, float width, float height)
     glUniform1i(glGetUniformLocation(g_ObjectShader.GetProgram(), "u_Texture"), 0);
     glUniform3f(colorLoc, 1.f, 1.f, 1.f);
     glBindVertexArray(g_DragonVAO);
-    glDrawElements(GL_TRIANGLES, g_DragonIndexCount, GL_UNSIGNED_INT, 0);
+    //glDrawElements(GL_TRIANGLES, g_DragonIndexCount, GL_UNSIGNED_INT, 0);
 
+    glDrawArrays(GL_TRIANGLES, 0, g_DragonIndexCount);
     glBindVertexArray(g_CubeVAO);
     const vec3 cubePositionsFixed[8] = {
         { -5.0f, 0.55f, -5.0f },

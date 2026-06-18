@@ -56,7 +56,34 @@ Ce projet est une application OpenGL en C++ qui affiche une scène 3D avec :
 - Ajout d'un grand plan subdivisé à `y = -1.0f` pour ancrer la scène et donner une forte impression de parallaxe lors des translations de la caméra.
 - Implémentation d'un shader de damier procédural (`u_UseTexture == 2` dans `object.fs`) utilisant les coordonnées UV pour alterner des cases grises sans charger d'image de texture externe.
 
+### 4. Rendu Hors Écran et Post-traitement (Framebuffer Object)
 
+* Mise en place d'un **Framebuffer Object (FBO)** qui permet de rendre l'intégralité de la scène dans une texture au lieu d'afficher directement le résultat à l'écran.
+* Création :
+
+  * d'une texture couleur (`g_FBOTex`) attachée au FBO ;
+  * d'un Renderbuffer (`g_DepthRBO`) contenant les informations de profondeur et de stencil.
+* Vérification de la complétude du framebuffer avec `glCheckFramebufferStatus()`.
+
+#### Affichage du rendu final
+
+Après le rendu de la scène dans le FBO :
+
+1. Le framebuffer par défaut est réactivé.
+2. Un quad plein écran est affiché.
+3. La texture produite par le FBO est utilisée comme entrée d'un shader de post-traitement.
+
+#### Effets de post-traitement
+
+Plusieurs effets peuvent être sélectionnés dynamiquement au clavier :
+
+* `0` : rendu normal
+* `1` : niveaux de gris
+* `2` : inversion des couleurs
+* `3` : détection de contours (Sobel)
+* `4` : aberration chromatique
+
+Ces effets sont implémentés dans le shader de post-traitement (`screen.fs`) et appliqués sur l'image complète après le rendu de la scène.
 
 ## Compilation et exécution
 
