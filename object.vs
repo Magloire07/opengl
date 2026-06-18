@@ -3,7 +3,13 @@ layout(location = 0) in vec3 a_position;
 layout(location = 1) in vec3 a_normal;
 layout(location = 2) in vec2 a_uv;
 
-uniform mat4 u_MVP;
+
+layout(std140) uniform CameraBlock
+{
+    mat4 u_Projection;
+    mat4 u_View;
+};
+
 uniform mat4 u_Model;
 
 out vec3 v_normal;
@@ -15,5 +21,6 @@ void main()
     v_normal = mat3(u_Model) * a_normal;
     v_uv = a_uv;
     v_worldPos = (u_Model * vec4(a_position, 1.0)).xyz;
-    gl_Position = u_MVP * vec4(a_position, 1.0);
+    //pour ubo
+    gl_Position = transpose(u_Projection) * transpose(u_View) * u_Model * vec4(a_position, 1.0);
 }

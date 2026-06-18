@@ -111,6 +111,12 @@ g++ -std=c++17 main.cpp common/GLShader.cpp -o main -lGL -lglfw -ldl -pthread
 ./main
 ```
 
+### 4. Uniform Buffer Object (UBO)
+
+- Mise en place d'un **Uniform Buffer Object (UBO)** pour regrouper les données de caméra (matrices de projection et de vue) dans un buffer partagé entre les shaders.
+- Les matrices sont mises à jour une seule fois par image puis accessibles directement depuis le shader grace à l'utilisation d'un bloc uniforme (`CameraBlock`).
+- Cette méthode réduit le nombre d'appels `glUniform*`, améliore l'organisation du code et facilite le partage de données entre plusieurs shaders.
+
 ## Fichiers principaux
 
 - `main.cpp` : logique de rendu, boucle principale, gestion des entrées, chargement OBJ et configuration de la scène

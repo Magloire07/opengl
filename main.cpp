@@ -11,6 +11,7 @@
 #include "common/GLShader.h"
 #include "DragonData.h"
 
+
 struct vec3 {
     float x, y, z;
 };
@@ -184,6 +185,8 @@ double g_LastY = 270.0;
 bool g_FirstMouse = true;
 bool g_MousePressed = false;
 float g_MouseSensitivity = 0.12f;
+// pour UBO
+GLuint g_CameraUBO = 0;
 
 static const SkyVertex skyboxVertices[] = {
     { -0.5f, -0.5f, -0.5f },
@@ -762,6 +765,23 @@ void CreateScreenQuad()
     glBindVertexArray(0);
 }
 
+// pour ubo 
+
+void CreateCameraUBO()
+{
+    glGenBuffers(1, &g_CameraUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, g_CameraUBO);
+
+    // projection + view, ça fait 2 matrices mat4
+    glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(mat4), nullptr, GL_DYNAMIC_DRAW);
+
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, g_CameraUBO);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    GLuint blockIndex = glGetUniformBlockIndex(g_ObjectShader.GetProgram(), "CameraBlock");
+    glUniformBlockBinding(g_ObjectShader.GetProgram(), blockIndex, 0);
+}
+
 bool Initialise()
 {
     g_SkyboxShader.LoadVertexShader("basic.vs");
@@ -775,6 +795,8 @@ bool Initialise()
     if (!g_ObjectShader.Create()) {
         return false;
     }
+    // pour ubo 
+    CreateCameraUBO();
 
     CreateSkyboxMesh();
     CreateCubeMesh();
@@ -883,6 +905,12 @@ void RenderScene(GLFWwindow* window, float width, float height)
     vec3 cameraTarget = add(g_CameraPosition, cameraFront);
     mat4 view = makeLookAt(g_CameraPosition, cameraTarget, { 0.f, 1.f, 0.f });
 
+    // pour ubo
+    glBindBuffer(GL_UNIFORM_BUFFER, g_CameraUBO);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), projection.m);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), view.m);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    
     glDepthFunc(GL_LEQUAL);
     glUseProgram(g_SkyboxShader.GetProgram());
     mat4 viewSky = view;
