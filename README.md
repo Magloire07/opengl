@@ -76,12 +76,29 @@ Après le rendu de la scène dans le FBO :
 #### Effets de post-traitement
 
 Plusieurs effets peuvent être sélectionnés dynamiquement au clavier :
+### Effets de post-traitement
+
+Les effets peuvent être changés en temps réel avec les touches `0` à `4`.
 
 * `0` : rendu normal
+
+![Rendu normal](images/0.png)
+
 * `1` : niveaux de gris
+
+![Niveaux de gris](images/1.png)
+
 * `2` : inversion des couleurs
+
+![Inversion des couleurs](images/2.png)
+
 * `3` : détection de contours (Sobel)
+
+![Détection de contours](images/3.png)
+
 * `4` : aberration chromatique
+
+![Aberration chromatique](images/4.png)
 
 Ces effets sont implémentés dans le shader de post-traitement (`screen.fs`) et appliqués sur l'image complète après le rendu de la scène.
 
